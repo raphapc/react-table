@@ -1,38 +1,95 @@
-
 .table {
   display: inline-block;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  margin: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-.table-header {
-  background-color: #f5f5f5;
-  color: #595959;
-  display: inline;
+body {
+  line-height: 50px;
+}
+
+.header {
+  height: auto !important;
+  color: #747474;
+  display: flex;
   margin: 0 !important;
-  padding-left: 10px;
   text-transform: none;
+  user-select: none;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: grab;
+  padding: 15px 10px;
+}
+.drag-header {
+  height: auto !important;
+  color: #747474;
+  display: flex;
+  margin: 0 !important;
+  text-transform: none;
+  user-select: none;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: grab;
+  padding: 15px 10px;
 }
 
-.table-header:hover {
+.header:hover {
   background-color: #d9d9d9;
 }
 
-.table-row{
-  background-color: #fff;
+.header--checkbox {
+  padding-left: 0.7rem;
+  align-self: center;
+  user-select: none;
+  cursor: pointer;
+  background-color: red;
+}
+
+.header--dragging {
+  pointer-events: auto !important;
+  cursor: grabbing !important;
+  cursor: -moz-grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
+.header__icon-sort {
+  margin-left: 8px;
+  color: #a5a5a5;
+}
+
+.header__icon-filter {
+  margin-left: 14px;
+  width: 14px;
+}
+
+.icon {
+  width: 12px;
+  fill: #a5a5a5;
+  align-items: center;
+}
+
+.ReactVirtualized__Table__rowColumn {
+  padding: 0 10px;
+}
+
+.ReactVirtualized__Table__rowColumn:first-of-type {
+  margin: 0;
+}
+
+.ReactVirtualized__Table__headerRow {
+  height: auto !important;
+  background-color: #f5f5f5;
+}
+
+.row {
   border-bottom: 1px #d9d9d9 solid;
   margin: 0;
 }
 
-.table-row:hover{
+.row:hover {
   background-color: #f5f5f5;
 }
 
-.icon {
-  color: #011324;
-}
-
-.sort-icon{
+.sort-icon {
   justify-content: end;
 }
 
@@ -40,6 +97,7 @@
   background-color: #f5f5f5;
   color: transparent;
   cursor: col-resize;
+  height: 50px;
   width: 2px;
   z-index: 3;
 }
@@ -52,4 +110,12 @@
 .DragHandleActive:hover {
   color: #0b6fcc;
   z-index: 3;
+}
+
+.expand-column {
+  width: 40px;
+}
+
+.expand-icon {
+  width: 12px;
 }

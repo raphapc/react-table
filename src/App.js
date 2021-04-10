@@ -2,12 +2,15 @@ import faker from 'faker';
 import React from 'react';
 import MyTable from './components/my-table/MyTable';
 
-
 function App() {
   const fetchDatasource = () =>
     new Array(100).fill(true).map(() => ({
       accountName: faker.finance.accountName(),
       name: faker.name.findName(),
+      // name: [
+      //   { firstname: faker.name.firstName(), lastname: faker.name.lastName() },
+      //   { firstname: faker.name.firstName(), lastname: faker.name.lastName() },
+      // ],
       amount: faker.finance.amount(),
       transactionType: faker.finance.transactionType(),
       date: faker.date.recent(),
@@ -75,7 +78,7 @@ function App() {
     { key: 'accountName', label: 'Account Name' },
     { key: 'amount', label: 'Amount' },
     { key: 'date', label: 'Date' },
-    { key: 'transactionType', label: 'Transaction Type' },
+    // { key: 'transactionType', label: 'Transaction Type' },
   ];
 
   const fetchMetadata = () => {
@@ -88,7 +91,7 @@ function App() {
         { key: 'name', label: 'Name' },
         { key: 'accountName', label: 'Account Name' },
         { key: 'amount', label: 'Amount' },
-        { key: 'date', label: 'Date' },
+        { key: 'date', label: 'Date', format: 'dd-MM-yyyy - hh:mm' },
         { key: 'transactionType', label: 'Transaction Type' },
         { key: 'creditCardNumber', label: 'Credit Card Number' },
         { key: 'account', label: 'Account' },
@@ -101,9 +104,23 @@ function App() {
   const columns = fetchColumns();
   const meta = fetchMetadata();
 
-  return <MyTable dataSource={dados} width={1200} height={800} columnsToDisplay={columns} filterSort={filters} metadata={meta} />;
+  const secondGlaceRender = () => {
+    return <div>Hello</div>;
+  };
+
+  return (
+    <MyTable
+      dataSource={dados}
+      width={800}
+      height={850}
+      columnsToDisplay={columns}
+      filterSort={filters}
+      metadata={meta}
+      // secondGlanceRender={secondGlaceRender}
+      // lineSelectable={true}
+    />
+  );
   // filterSort={filters}
 }
 
 export default App;
-
