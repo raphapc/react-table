@@ -1,16 +1,17 @@
-import { CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons';
-import { Button, Input, Select, Space, Transfer } from 'antd';
+import { CaretDownOutlined, CaretUpOutlined, DownOutlined } from '@ant-design/icons';
+import { Button, DatePicker, Dropdown, Input, Menu, Space, Transfer } from 'antd';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
+import SubMenu from 'antd/lib/menu/SubMenu';
 import arrayMove from 'array-move';
+import classNames from 'classnames';
 import _ from 'lodash';
+import moment from 'moment';
 import React, { cloneElement, Fragment, useEffect, useState } from 'react';
-import Draggable from 'react-draggable';
-// import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import ReactDragListView from 'react-drag-listview';
+import Draggable from 'react-draggable';
 import { ReactSVG } from 'react-svg';
 import { Column, defaultTableRowRenderer, Table } from 'react-virtualized';
 import './MyTable.css';
-
 const { DragColumn } = ReactDragListView;
 
 const getHeadersFrom = (headersList, totalWidth, isSelectable) => {
@@ -39,16 +40,64 @@ const addSelectableColumnToRows = (rows) => {
   });
 };
 
-const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, metadata, secondGlanceRender, lineSelectable = false }) => {
-  const { Option } = Select;
+const getColumnType = (metadata, columnId) => {
+  if (metadata && metadata.columnsType) {
+    return metadata.columnsType.find((colType) => colType.key === columnId);
+  }
+  return '';
+};
+
+const defaultRowHeight = 50;
+const smallRowHeight = 40;
+
+const numberFilters = {
+  equals: 'equals',
+  lessThan: 'lessThan',
+  greaterThan: 'greaterThan',
+  between: 'between',
+};
+
+const dateFilters = {
+  equals: 'equals',
+  before: 'before',
+  after: 'after',
+  interval: 'interval',
+};
+
+const stringFilters = {
+  contains: 'contains',
+  notContains: 'notContains',
+};
+
+const MyTable = ({
+  dataSource,
+  width,
+  height,
+  filterSort,
+  columnsToDisplay,
+  metadata,
+  secondGlanceRender,
+  lineSelectable = false,
+  onRowSelected = () => {},
+  tableClassName = 'table',
+  headerClassName = '',
+  rowClassName = 'row',
+  cellClassName = 'cell',
+  small = false,
+  hasDropdown = true,
+}) => {
   const inputRef = React.useRef(null);
+  const inputRef2 = React.useRef(null);
   const processedDatasource = getDatasource(lineSelectable, dataSource);
   const initialFilters = filterSort;
+  const rowHeight = small ? smallRowHeight : defaultRowHeight;
+  const hasSelectedListChanged = React.useRef(false);
+  let filterDates = [];
+
   //State variables
   const [expandedRows, setExpandedRows] = useState(() => new Set());
   const [isHeaderCheckboxSelected, setIsHeaderCheckboxSelected] = useState(false);
   const [headers, setHeaders] = useState(() => getHeadersFrom(columnsToDisplay, width, lineSelectable));
-  const [selected, setSelected] = useState();
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [sortedList, setSortedList] = useState(processedDatasource);
   const [sortFilter, setSortFilter] = useState(filterSort);
@@ -58,17 +107,23 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
     console.log('reeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeender');
   });
 
-  const _sort = (sortBy) => {
-    setSortedList(_sortList(sortBy));
+  useEffect(() => {
+    if (hasSelectedListChanged.current) {
+      const selectedRows = sortedList.filter((row) => row.isSelected);
+      onRowSelected(selectedRows);
+      hasSelectedListChanged.current = false;
+    }
+  }, [sortedList, onRowSelected]);
+
+  const _sort = (sortBy, sortDirection) => {
+    setSortedList(_sortList(sortBy, sortDirection));
   };
 
-  const _sortList = (sortBy) => {
+  const _sortList = (sortBy, sortDirection) => {
     let columnType;
     let newList;
     const columnRule = sortFilter.filter((rule) => rule.key === sortBy);
-    if (metadata && metadata.columnsType) {
-      columnType = metadata.columnsType.find((colType) => colType.key === sortBy);
-    }
+    columnType = getColumnType(metadata, sortBy);
     if (!columnType) {
       newList = _.sortBy(sortedList, [sortBy]);
     } else if (columnType.type === 'number') {
@@ -79,7 +134,10 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
       newList = _.sortBy(sortedList, [(elem) => Boolean(elem[sortBy])]);
     }
 
-    const isDescending = columnRule.length !== 0 ? columnRule[0].isDescending : false;
+    let isDescending = columnRule.length !== 0 ? columnRule[0].isDescending : false;
+    if (sortDirection) {
+      isDescending = sortDirection === 'descending' ? true : false;
+    }
     if (columnRule.length !== 0 && isDescending) {
       newList.reverse();
     }
@@ -97,7 +155,6 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
         return rule;
       });
     });
-
     return newList;
   };
 
@@ -117,31 +174,174 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
     });
   };
 
-  const handleFilter = () => {
-    if (selected && inputRef.current.state.value) {
-      const filter = inputRef.current.state.value;
+  const handleFilter = (columnType, idColumn, operation, isDate = false) => {
+    let filterBy;
+    let filterUntil;
+    if (isDate) {
+      console.log('filterDates', filterDates);
+      filterBy = filterDates[0];
+      filterUntil = filterDates[1] || '';
+    } else {
+      filterBy = inputRef.current.state.value;
+      filterUntil = inputRef2?.current?.state?.value || '';
+    }
 
-      setSortedList(() => {
-        const newSortedList = _.cloneDeep(processedDatasource);
-        const filteredList = newSortedList.filter((row) => {
-          return row[selected].includes(filter);
-        });
+    switch (columnType?.type) {
+      case 'number': {
+        filterColByNumber(operation, filterBy, filterUntil, idColumn);
+        break;
+      }
+      case 'date': {
+        filterColByDate(operation, filterBy, filterUntil, idColumn);
+        break;
+      }
+      default: {
+        filterColByString(operation, filterBy, idColumn);
+      }
+    }
 
-        return filteredList;
+    setSortFilter((prevSortFilter) => {
+      const newSortFilter = _.cloneDeep(prevSortFilter);
+      return newSortFilter.map((rule) => {
+        if (rule.key === idColumn) {
+          rule.filterValue = filterBy;
+        } else {
+          rule.filterValue = '';
+        }
+        rule.isSorted = false;
+        return rule;
       });
+    });
+  };
 
-      setSortFilter((prevSortFilter) => {
-        const newSortFilter = _.cloneDeep(prevSortFilter);
-        return newSortFilter.map((rule) => {
-          if (rule.key === selected) {
-            rule.filterValue = filter;
-          } else {
-            rule.filterValue = '';
-          }
-          rule.isSorted = false;
-          return rule;
+  const filterColByNumber = (operation, filterBy, filterUntil, idColumn) => {
+    switch (operation) {
+      case numberFilters.equals: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return row[idColumn] === filterBy;
+          });
+
+          return filteredList;
         });
-      });
+        break;
+      }
+      case numberFilters.lessThan: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return Number(row[idColumn]) < Number(filterBy);
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      case numberFilters.greaterThan: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return Number(row[idColumn]) > Number(filterBy);
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      case numberFilters.between: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return Number(row[idColumn]) > Number(filterBy) && Number(row[idColumn]) < Number(filterUntil);
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      default: {
+      }
+    }
+  };
+
+  const filterColByString = (operation, filterBy, idColumn) => {
+    switch (operation) {
+      case stringFilters.contains: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return row[idColumn].toUpperCase().includes(filterBy.toUpperCase());
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      case stringFilters.notContains: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return !row[idColumn].toUpperCase().includes(filterBy.toUpperCase());
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      default: {
+      }
+    }
+  };
+
+  const filterColByDate = (operation, filterBy, filterUntil, idColumn) => {
+    switch (operation) {
+      case dateFilters.equals: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return moment(row[idColumn]).isSame(filterBy, 'day');
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      case dateFilters.before: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return moment(row[idColumn]).isBefore(filterBy, 'day');
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      case dateFilters.after: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return moment(row[idColumn]).isAfter(filterBy, 'day');
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      case dateFilters.interval: {
+        setSortedList(() => {
+          const newSortedList = _.cloneDeep(processedDatasource);
+          const filteredList = newSortedList.filter((row) => {
+            return moment(row[idColumn]).isBetween(filterBy, filterUntil, 'day');
+          });
+
+          return filteredList;
+        });
+        break;
+      }
+      default: {
+      }
     }
   };
 
@@ -155,7 +355,7 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
   };
 
   const renderHeaderRow = (params) => {
-    return <SortableHeaderRowRenderer {...params} helperClass='header--dragging' />;
+    return <SortableHeaderRowRenderer {...params} />;
   };
 
   const SortableHeaderRowRenderer = ({ className, columns, style }) => {
@@ -165,7 +365,9 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
           if (column.props.id === 'checkbox') {
             return (
               <Fragment key={column.key}>
-                <CustomHeader index={index}>{column}</CustomHeader>
+                <CustomHeader className='checkbox' index={index}>
+                  {column}
+                </CustomHeader>
               </Fragment>
             );
           }
@@ -178,9 +380,16 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
           }
 
           const sorted = sortFilter.find((filter) => filter.key === column.props.id && (filter.isSorted || filter.filterValue));
+          const headerClass = headerClassName;
           return (
             <Fragment key={column.key}>
-              <CustomHeader className='drag-header' index={index} onClick={() => sortColumn(column.props.id)} sortFilter={sorted}>
+              <CustomHeader
+                className={classNames('drag-header', headerClass)}
+                index={index}
+                onClick={() => sortColumn(column.props.id)}
+                sortFilter={sorted}
+                idColumn={column.props.id}
+              >
                 {column}
               </CustomHeader>
               <Draggable
@@ -190,7 +399,7 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
                 defaultClassNameDragging='DragHandleActive'
                 onStop={(_, { x }) => _resizeColumn(column.props.id, x)}
               >
-                <span className='drag-handle-icon'>|</span>
+                <span>|</span>
               </Draggable>
             </Fragment>
           );
@@ -199,7 +408,7 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
     );
   };
 
-  const CustomHeader = ({ children, sortFilter, ...headerProps }) => {
+  const CustomHeader = ({ children, sortFilter, idColumn, ...headerProps }) => {
     const header = children.props.children[0];
 
     let headerClone = cloneElement(header, {
@@ -218,32 +427,256 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
       </span>
     );
 
-    return cloneElement(children, headerProps, [headerClone, sortIndicator, filterIndicator]);
+    const dropdownMenu = hasDropdown && idColumn && (
+      <Dropdown key={idColumn} overlay={getMenuOptions(idColumn)} trigger={['click']} placement='bottomRight'>
+        <DownOutlined onClick={(e) => getDrop(e)} />
+      </Dropdown>
+    );
+
+    return cloneElement(children, headerProps, [headerClone, sortIndicator, filterIndicator, dropdownMenu]);
   };
 
-  // const SortableHeader = SortableElement(({ children, sortFilter, ...headerProps }) => {
-  //   const header = children.props.children[0];
+  const getDrop = (e) => {
+    e.stopPropagation();
+  };
 
-  //   let headerClone = cloneElement(header, {
-  //     ...header.props,
-  //   });
+  const getMenuOptions = (idColumn) => {
+    const columnType = getColumnType(metadata, idColumn);
+    let filterOptions;
+    let sortOptions;
 
-  //   const sortIndicator = sortFilter && sortFilter.isSorted && (
-  //     <span key='sortIndicator' className='header__icon-sort'>
-  //       {/* {sortFilter.isDescending ? <ReactSVG src='icons/sort-down.svg' className='icon' /> : <ReactSVG src='icons/sort-up.svg' className='icon' />} */}
-  //       {sortFilter.isDescending ? <CaretDownOutlined className='icon' /> : <CaretUpOutlined className='icon' />}
-  //     </span>
-  //   );
-  //   const filterIndicator = sortFilter && sortFilter.filterValue && (
-  //     <span key='filterIndicator' className='header__icon-filter'>
-  //       <ReactSVG src='icons/filter.svg' className='icon' />
-  //     </span>
-  //   );
+    if (columnType?.type === 'number') {
+      filterOptions = (
+        <Fragment>
+          <SubMenu
+            title='Equals'
+            key={idColumn + '-equals'}
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.equals })}
+          </SubMenu>
+          <SubMenu
+            title='Less than'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.lessThan })}
+          </SubMenu>
+          <SubMenu
+            title='Greater than'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.greaterThan })}
+          </SubMenu>
+          <SubMenu
+            title='Between'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItem({ inputRef, inputRef2, columnType, idColumn, operation: numberFilters.between })}
+          </SubMenu>
+        </Fragment>
+      );
+    } else if (columnType?.type === 'date') {
+      filterOptions = (
+        <Fragment>
+          <SubMenu
+            title='Equals'
+            key={idColumn + '-equals'}
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.equals })}
+          </SubMenu>
+          <SubMenu
+            title='Before'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.before })}
+          </SubMenu>
+          <SubMenu
+            title='After'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.after })}
+          </SubMenu>
+          <SubMenu
+            title='Date interval'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItemDate({ inputRef, inputRef2, columnType, idColumn, operation: dateFilters.interval })}
+          </SubMenu>
+        </Fragment>
+      );
+    } else {
+      filterOptions = (
+        <Fragment>
+          <SubMenu
+            title='Contains'
+            key={idColumn + '-equals'}
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.contains })}
+          </SubMenu>
+          <SubMenu
+            title='Does not contain'
+            onTitleClick={(e) => {
+              e.domEvent.stopPropagation();
+            }}
+          >
+            {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.notContains })}
+          </SubMenu>
+        </Fragment>
+      );
+    }
 
-  //   return cloneElement(children, headerProps, [headerClone, sortIndicator, filterIndicator]);
-  // });
+    sortOptions = (
+      <Fragment>
+        <Menu.Item
+          key={idColumn + '-asc'}
+          onClick={({ domEvent: e }) => {
+            e.stopPropagation();
+            _sort(idColumn, 'asceding');
+          }}
+        >
+          Asceding
+        </Menu.Item>
+        <Menu.Item
+          key={idColumn + '-desc'}
+          onClick={({ domEvent: e }) => {
+            e.stopPropagation();
+            _sort(idColumn, 'descending');
+          }}
+        >
+          Descending
+        </Menu.Item>
+      </Fragment>
+    );
+    return (
+      <Menu triggerSubMenuAction='click'>
+        <SubMenu
+          title='Filter'
+          key='filter'
+          popupClassName='sub-menu'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {filterOptions}
+        </SubMenu>
+        <SubMenu
+          title='Sort'
+          key='sort'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {sortOptions}
+        </SubMenu>
+        <Menu.Divider />
+        <Menu.Item
+          key='clear'
+          onClick={({ domEvent: e }) => {
+            e.stopPropagation();
+            resetFilter();
+          }}
+        >
+          Clear Filter/Sort
+        </Menu.Item>
+      </Menu>
+    );
+  };
+
+  const getMenuItem = ({ inputRef, inputRef2, columnType, idColumn, operation }) => {
+    return (
+      <Menu.Item>
+        <Space direction='vertical'>
+          <div>
+            {inputRef2 && <label>Min:</label>}
+            <Input
+              ref={inputRef}
+              style={{ width: 130 }}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            />
+          </div>
+          {inputRef2 && (
+            <div>
+              <label>Max:</label>
+              <Input
+                ref={inputRef2}
+                style={{ width: 130 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </div>
+          )}
+
+          <Space>
+            <Button
+              type='primary'
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFilter(columnType, idColumn, operation);
+              }}
+            >
+              Ok
+            </Button>
+          </Space>
+        </Space>
+      </Menu.Item>
+    );
+  };
+
+  const getMenuItemDate = ({ inputRef, inputRef2, columnType, idColumn, operation }) => {
+    return (
+      <Menu.Item>
+        <Space
+          direction='vertical'
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          {!inputRef2 && <DatePicker className='date-picker' format={'DD-MM-YYYY'} onChange={(value) => (filterDates = [value])} />}
+          {inputRef2 && <DatePicker.RangePicker className='range-picker' format={'DD-MM-YYYY'} onChange={(value) => (filterDates = value)} />}
+          <Space>
+            <Button
+              type='primary'
+              onClick={() => {
+                handleFilter(columnType, idColumn, operation, true);
+              }}
+            >
+              Ok
+            </Button>
+          </Space>
+        </Space>
+      </Menu.Item>
+    );
+  };
 
   const onDragEnd = (fromIndex, toIndex) => {
+    if (lineSelectable) {
+      //need to remove one position because of the checkbox
+      fromIndex--;
+      toIndex--;
+    }
     setHeaders(arrayMove(headers, fromIndex, toIndex));
   };
 
@@ -265,6 +698,7 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
   };
 
   const selectCheckbox = (rowSelectedIndex) => {
+    hasSelectedListChanged.current = true;
     setSortedList((prevSortedList) => {
       const newSortedList = _.cloneDeep(prevSortedList);
       return newSortedList.map((row, index) => {
@@ -280,6 +714,7 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
   };
 
   const selectAllRows = () => {
+    hasSelectedListChanged.current = true;
     setIsHeaderCheckboxSelected((prevSelected) => !prevSelected);
     setSortedList((prevSortedList) => {
       const newSortedList = _.cloneDeep(prevSortedList);
@@ -293,29 +728,38 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
   const renderRow = (props, expandedRows) => {
     const { className, columns, index, key, onColumnClick, onRowClick, rowData, style } = props;
     if (expandedRows.has(rowData)) {
+      console.log('expanded ---');
       return (
         <Fragment key={key}>
           <div className='expand-column' style={style}>
-            {getSecondGlaceRender()}
+            {getSecondGlaceRender('hallo')}
             {defaultTableRowRenderer(props)}
           </div>
         </Fragment>
       );
     }
+
+    if (lineSelectable && rowData.isSelected) {
+      props.className = classNames(props.className, { selected: rowData.isSelected });
+    }
     return (
       <Fragment key={key}>
-        {/* <ReactSVG src='icons/chevron-down.svg' style={style} /> {defaultTableRowRenderer(props)} */}
+        {/* <ReactSVG src='icons/chevron-down.svg' className='icon' style={style} /> {defaultTableRowRenderer(props)} */}
         {defaultTableRowRenderer(props)}
       </Fragment>
     );
   };
 
-  const getSecondGlaceRender = () => {
+  const getSecondGlaceRender = (text) => {
     console.log('getSecondGlaceRender');
-    return secondGlanceRender;
+    return secondGlanceRender(text);
   };
 
   const renderCell = ({ cellData, columnData, columnIndex, dataKey, isScrolling, rowData, rowIndex }) => {
+    let columnType;
+    if (metadata && metadata.columnsType) {
+      columnType = metadata.columnsType.find((colType) => colType.key === dataKey);
+    }
     if (dataKey === 'isSelected') {
       return getCheckbox({ isSelected: rowData.isSelected, onCheckboxClick: () => selectCheckbox(rowIndex) });
     }
@@ -325,12 +769,16 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
     if (cellData == null) {
       return '';
     } else {
+      if (columnType && columnType.type === 'date') {
+        const formatedDate = columnType.format ? columnType.format : 'DD-MM-yyyy';
+        return moment(cellData).format(formatedDate);
+      }
       return String(cellData);
     }
   };
 
   const expandedRow = (rowData) => {
-    console.log('expandedRow', rowData);
+    console.log('expandedRow func', rowData);
     setExpandedRows((prevRows) => {
       let newRows = _.cloneDeep(prevRows);
       if (newRows.has(rowData)) {
@@ -360,7 +808,6 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
   const dragProps = {
     onDragEnd,
     nodeSelector: '.drag-header',
-    // handleSelector: '.ReactVirtualized__Table__headerColumn',
     lineClassName: 'line',
     ignoreSelector: '.DragHandle',
   };
@@ -370,17 +817,16 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
       {sortedList && (
         <DragColumn {...dragProps}>
           <Table
-            width={width || '100%'}
+            width={width}
             height={height}
-            headerHeight={20}
-            rowHeight={30}
+            headerHeight={rowHeight}
+            rowHeight={rowHeight}
             rowCount={sortedList.length}
             rowGetter={({ index }) => sortedList[index]}
             overscanRowCount={10}
             headerRowRenderer={renderHeaderRow}
-            className='table'
-            headerClassName='header'
-            rowClassName='row'
+            className={tableClassName}
+            rowClassName={rowClassName}
             rowRenderer={(renderParams) => renderRow(renderParams, expandedRows)}
           >
             {lineSelectable && (
@@ -388,6 +834,7 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
                 id={'checkbox'}
                 key={'checkbox'}
                 dataKey={'isSelected'}
+                className={'checkbox'}
                 label={getCheckbox({ isSelected: isHeaderCheckboxSelected, onCheckboxClick: selectAllRows })}
                 width={40}
                 cellRenderer={renderCell}
@@ -395,28 +842,21 @@ const MyTable = ({ dataSource, width, height, filterSort, columnsToDisplay, meta
             )}
             {secondGlanceRender && <Column id={'expand'} key={'expand'} dataKey={''} label='' width={40} cellRenderer={renderCell} />}
             {headers &&
-              headers.map((header) => <Column id={header.key} key={header.key} dataKey={header.key} label={header.label} width={header.width} />)}
+              headers.map((header) => (
+                <Column
+                  id={header.key}
+                  key={header.key}
+                  dataKey={header.key}
+                  label={header.label}
+                  width={header.width}
+                  className={cellClassName}
+                  cellRenderer={renderCell}
+                />
+              ))}
           </Table>
         </DragColumn>
       )}
       <Space direction='vertical'>
-        <Space>
-          <Select defaultValue='Column to Filter' style={{ width: 180 }} onChange={(selected) => setSelected(selected)}>
-            {headers &&
-              headers.map((header) => (
-                <Option key={header.key} value={header.key}>
-                  {header.label}
-                </Option>
-              ))}
-          </Select>
-          {selected && <Input ref={inputRef} placeholder='Filter by' />}
-          <Button type='primary' onClick={handleFilter}>
-            Apply Filter
-          </Button>
-          <Button type='danger' onClick={resetFilter}>
-            Clear All
-          </Button>
-        </Space>
         <Space>
           <Transfer
             dataSource={metadata.columnsDisplay}

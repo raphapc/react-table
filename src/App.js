@@ -7,10 +7,6 @@ function App() {
     new Array(100).fill(true).map(() => ({
       accountName: faker.finance.accountName(),
       name: faker.name.findName(),
-      // name: [
-      //   { firstname: faker.name.firstName(), lastname: faker.name.lastName() },
-      //   { firstname: faker.name.firstName(), lastname: faker.name.lastName() },
-      // ],
       amount: faker.finance.amount(),
       transactionType: faker.finance.transactionType(),
       date: faker.date.recent(),
@@ -85,13 +81,13 @@ function App() {
     return {
       columnsType: [
         { key: 'amount', type: 'number' },
-        { key: 'date', type: 'date' },
+        { key: 'date', type: 'date', format: 'DD-MM-yyyy - HH:mm' },
       ],
       columnsDisplay: [
         { key: 'name', label: 'Name' },
         { key: 'accountName', label: 'Account Name' },
         { key: 'amount', label: 'Amount' },
-        { key: 'date', label: 'Date', format: 'dd-MM-yyyy - hh:mm' },
+        { key: 'date', label: 'Date' },
         { key: 'transactionType', label: 'Transaction Type' },
         { key: 'creditCardNumber', label: 'Credit Card Number' },
         { key: 'account', label: 'Account' },
@@ -104,20 +100,31 @@ function App() {
   const columns = fetchColumns();
   const meta = fetchMetadata();
 
-  const secondGlaceRender = () => {
+  const secondGlaceRender = (text) => {
+    console.log('secondGlaceRender pai', text);
     return <div>Hello</div>;
+  };
+
+  const selectedRow = (selectedRows) => {
+    console.log('selectedRows', selectedRows);
   };
 
   return (
     <MyTable
       dataSource={dados}
       width={800}
-      height={850}
+      height={600}
       columnsToDisplay={columns}
       filterSort={filters}
       metadata={meta}
+      // tableClassName='testTable'
+      // cellClassName='testCell'
+      // headerClassName='testHeader'
       // secondGlanceRender={secondGlaceRender}
-      // lineSelectable={true}
+      lineSelectable={true}
+      onRowSelected={selectedRow}
+      // small
+      // hasDropdown={false}
     />
   );
   // filterSort={filters}

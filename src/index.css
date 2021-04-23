@@ -1,1 +1,11 @@
+.testTable {
+  background-color: beige;
+}
 
+.testCell {
+  border: 1px solid blue;
+}
+
+.testHeader {
+  border: 1px solid blue;
+}
