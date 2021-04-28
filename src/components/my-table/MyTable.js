@@ -1,18 +1,17 @@
 import { CaretDownOutlined, CaretUpOutlined, DownOutlined } from '@ant-design/icons';
-import { Button, Col, DatePicker, Dropdown, Input, Menu, Row } from 'antd';
-import Checkbox from 'antd/lib/checkbox/Checkbox';
-import SubMenu from 'antd/lib/menu/SubMenu';
+import { Button, Col, DatePicker, Dropdown, Input, Menu, Checkbox } from 'antd';
 import arrayMove from 'array-move';
 import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
-import React, { forwardRef, cloneElement, Fragment, useEffect, useState } from 'react';
+import React, { cloneElement, Fragment, useEffect, useState } from 'react';
 import ReactDragListView from 'react-drag-listview';
 import Draggable from 'react-draggable';
 import { ReactSVG } from 'react-svg';
 import { Column, defaultTableRowRenderer, Table } from 'react-virtualized';
 import './MyTable.css';
 const { DragColumn } = ReactDragListView;
+const { SubMenu } = Menu;
 
 const getHeadersFrom = (headersList, totalWidth, isSelectable) => {
   let adjustedWidth = totalWidth;
