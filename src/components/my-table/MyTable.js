@@ -1,12 +1,12 @@
 import { CaretDownOutlined, CaretUpOutlined, DownOutlined } from '@ant-design/icons';
-import { Button, DatePicker, Dropdown, Input, Menu, Space, Transfer } from 'antd';
+import { Button, Col, DatePicker, Dropdown, Input, Menu, Row } from 'antd';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
 import SubMenu from 'antd/lib/menu/SubMenu';
 import arrayMove from 'array-move';
 import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
-import React, { cloneElement, Fragment, useEffect, useState } from 'react';
+import React, { forwardRef, cloneElement, Fragment, useEffect, useState } from 'react';
 import ReactDragListView from 'react-drag-listview';
 import Draggable from 'react-draggable';
 import { ReactSVG } from 'react-svg';
@@ -178,7 +178,6 @@ const MyTable = ({
     let filterBy;
     let filterUntil;
     if (isDate) {
-      console.log('filterDates', filterDates);
       filterBy = filterDates[0];
       filterUntil = filterDates[1] || '';
     } else {
@@ -408,7 +407,7 @@ const MyTable = ({
     );
   };
 
-  const CustomHeader = ({ children, sortFilter, idColumn, ...headerProps }) => {
+  const CustomHeader = ({ children, sortFilter, idColumn, ...headerProps }, ref) => {
     const header = children.props.children[0];
 
     let headerClone = cloneElement(header, {
@@ -442,130 +441,139 @@ const MyTable = ({
 
   const getMenuOptions = (idColumn) => {
     const columnType = getColumnType(metadata, idColumn);
-    let filterOptions;
-    let sortOptions;
+    let filterOptions = [];
+    let sortOptions = [];
 
     if (columnType?.type === 'number') {
-      filterOptions = (
-        <Fragment>
-          <SubMenu
-            title='Equals'
-            key={idColumn + '-equals'}
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.equals })}
-          </SubMenu>
-          <SubMenu
-            title='Less than'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.lessThan })}
-          </SubMenu>
-          <SubMenu
-            title='Greater than'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.greaterThan })}
-          </SubMenu>
-          <SubMenu
-            title='Between'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItem({ inputRef, inputRef2, columnType, idColumn, operation: numberFilters.between })}
-          </SubMenu>
-        </Fragment>
+      filterOptions.push(
+        <SubMenu
+          title='Equals'
+          key={idColumn + '-equals'}
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.equals })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='Less than'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.lessThan })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='Greater than'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.greaterThan })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='Between'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItem({ inputRef, inputRef2, columnType, idColumn, operation: numberFilters.between })}
+        </SubMenu>
       );
     } else if (columnType?.type === 'date') {
-      filterOptions = (
-        <Fragment>
-          <SubMenu
-            title='Equals'
-            key={idColumn + '-equals'}
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.equals })}
-          </SubMenu>
-          <SubMenu
-            title='Before'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.before })}
-          </SubMenu>
-          <SubMenu
-            title='After'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.after })}
-          </SubMenu>
-          <SubMenu
-            title='Date interval'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItemDate({ inputRef, inputRef2, columnType, idColumn, operation: dateFilters.interval })}
-          </SubMenu>
-        </Fragment>
+      filterOptions.push(
+        <SubMenu
+          title='Equals'
+          key={idColumn + '-equals'}
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.equals })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='Before'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.before })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='After'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.after })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='Date interval'
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItemDate({ inputRef, inputRef2, columnType, idColumn, operation: dateFilters.interval })}
+        </SubMenu>
       );
     } else {
-      filterOptions = (
-        <Fragment>
-          <SubMenu
-            title='Contains'
-            key={idColumn + '-equals'}
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.contains })}
-          </SubMenu>
-          <SubMenu
-            title='Does not contain'
-            onTitleClick={(e) => {
-              e.domEvent.stopPropagation();
-            }}
-          >
-            {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.notContains })}
-          </SubMenu>
-        </Fragment>
+      filterOptions.push(
+        <SubMenu
+          title='Contains'
+          key={idColumn + '-contains'}
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.contains })}
+        </SubMenu>
+      );
+      filterOptions.push(
+        <SubMenu
+          title='Does not contain'
+          key={idColumn + '-notContains'}
+          onTitleClick={(e) => {
+            e.domEvent.stopPropagation();
+          }}
+        >
+          {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.notContains })}
+        </SubMenu>
       );
     }
 
-    sortOptions = (
-      <Fragment>
-        <Menu.Item
-          key={idColumn + '-asc'}
-          onClick={({ domEvent: e }) => {
-            e.stopPropagation();
-            _sort(idColumn, 'asceding');
-          }}
-        >
-          Asceding
-        </Menu.Item>
-        <Menu.Item
-          key={idColumn + '-desc'}
-          onClick={({ domEvent: e }) => {
-            e.stopPropagation();
-            _sort(idColumn, 'descending');
-          }}
-        >
-          Descending
-        </Menu.Item>
-      </Fragment>
+    sortOptions.push(
+      <Menu.Item
+        key={idColumn + '-asc'}
+        onClick={({ domEvent: e }) => {
+          e.stopPropagation();
+          _sort(idColumn, 'asceding');
+        }}
+      >
+        Asceding
+      </Menu.Item>
+    );
+    sortOptions.push(
+      <Menu.Item
+        key={idColumn + '-desc'}
+        onClick={({ domEvent: e }) => {
+          e.stopPropagation();
+          _sort(idColumn, 'descending');
+        }}
+      >
+        Descending
+      </Menu.Item>
     );
     return (
       <Menu triggerSubMenuAction='click'>
@@ -577,7 +585,7 @@ const MyTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {filterOptions}
+          {filterOptions.map((filterOption) => filterOption)}
         </SubMenu>
         <SubMenu
           title='Sort'
@@ -586,7 +594,7 @@ const MyTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {sortOptions}
+          {sortOptions.map((sortOption) => sortOption)}
         </SubMenu>
         <Menu.Divider />
         <Menu.Item
@@ -605,42 +613,41 @@ const MyTable = ({
   const getMenuItem = ({ inputRef, inputRef2, columnType, idColumn, operation }) => {
     return (
       <Menu.Item>
-        <Space direction='vertical'>
-          <div>
-            {inputRef2 && <label>Min:</label>}
+        <Col>
+          <div className='input-wrapper'>
+            {inputRef2 && <label className='input-label'>Min:</label>}
             <Input
               ref={inputRef}
-              style={{ width: 130 }}
+              style={{ width: 130, marginLeft: 3 }}
+              placeholder='Value'
               onClick={(e) => {
                 e.stopPropagation();
               }}
             />
           </div>
           {inputRef2 && (
-            <div>
-              <label>Max:</label>
+            <div className='input-wrapper'>
+              <label className='input-label'>Max:</label>
               <Input
                 ref={inputRef2}
-                style={{ width: 130 }}
+                style={{ width: 130, marginLeft: 3 }}
+                placeholder='Second Value'
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
               />
             </div>
           )}
-
-          <Space>
-            <Button
-              type='primary'
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFilter(columnType, idColumn, operation);
-              }}
-            >
-              Ok
-            </Button>
-          </Space>
-        </Space>
+          <Button
+            type='primary'
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFilter(columnType, idColumn, operation);
+            }}
+          >
+            Ok
+          </Button>
+        </Col>
       </Menu.Item>
     );
   };
@@ -648,25 +655,22 @@ const MyTable = ({
   const getMenuItemDate = ({ inputRef, inputRef2, columnType, idColumn, operation }) => {
     return (
       <Menu.Item>
-        <Space
-          direction='vertical'
+        <Col
           onClick={(e) => {
             e.stopPropagation();
           }}
         >
           {!inputRef2 && <DatePicker className='date-picker' format={'DD-MM-YYYY'} onChange={(value) => (filterDates = [value])} />}
           {inputRef2 && <DatePicker.RangePicker className='range-picker' format={'DD-MM-YYYY'} onChange={(value) => (filterDates = value)} />}
-          <Space>
-            <Button
-              type='primary'
-              onClick={() => {
-                handleFilter(columnType, idColumn, operation, true);
-              }}
-            >
-              Ok
-            </Button>
-          </Space>
-        </Space>
+          <Button
+            type='primary'
+            onClick={() => {
+              handleFilter(columnType, idColumn, operation, true);
+            }}
+          >
+            Ok
+          </Button>
+        </Col>
       </Menu.Item>
     );
   };
@@ -813,7 +817,7 @@ const MyTable = ({
   };
 
   return (
-    <Space>
+    <Fragment>
       {sortedList && (
         <DragColumn {...dragProps}>
           <Table
@@ -856,7 +860,7 @@ const MyTable = ({
           </Table>
         </DragColumn>
       )}
-      <Space direction='vertical'>
+      {/* <Space direction='vertical'>
         <Space>
           <Transfer
             dataSource={metadata.columnsDisplay}
@@ -873,8 +877,8 @@ const MyTable = ({
             Apply
           </Button>
         </Space>
-      </Space>
-    </Space>
+      </Space> */}
+    </Fragment>
   );
 };
 

@@ -177,3 +177,21 @@
 .sub-menu {
   margin-left: -30px;
 }
+
+.ant-dropdown-menu-submenu-arrow {
+  right: -5px !important;
+}
+
+.input-wrapper {
+  margin-bottom: 5px;
+}
+
+.input-label {
+  display: inline-block;
+  width: 35px;
+}
+
+.ant-calendar-picker {
+  display: block !important;
+  margin-bottom: 5px !important;
+}
