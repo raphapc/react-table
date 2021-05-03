@@ -1,5 +1,5 @@
-import { CaretDownOutlined, CaretUpOutlined, DownOutlined } from '@ant-design/icons';
-import { Button, Col, DatePicker, Dropdown, Input, Menu, Checkbox } from 'antd';
+import { CaretDownOutlined, CaretUpOutlined, DownOutlined, FilterFilled } from '@ant-design/icons';
+import { Button, Checkbox, Col, DatePicker, Dropdown, Input, Menu } from 'antd';
 import arrayMove from 'array-move';
 import classNames from 'classnames';
 import _ from 'lodash';
@@ -7,9 +7,8 @@ import moment from 'moment';
 import React, { cloneElement, Fragment, useEffect, useState } from 'react';
 import ReactDragListView from 'react-drag-listview';
 import Draggable from 'react-draggable';
-import { ReactSVG } from 'react-svg';
 import { Column, defaultTableRowRenderer, Table } from 'react-virtualized';
-import './MyTable.css';
+import './NesTable.css';
 const { DragColumn } = ReactDragListView;
 const { SubMenu } = Menu;
 
@@ -68,7 +67,7 @@ const stringFilters = {
   notContains: 'notContains',
 };
 
-const MyTable = ({
+const NesTable = ({
   dataSource,
   width,
   height,
@@ -421,7 +420,8 @@ const MyTable = ({
     );
     const filterIndicator = sortFilter && sortFilter.filterValue && (
       <span key='filterIndicator' className='header__icon-filter'>
-        <ReactSVG src='icons/filter.svg' className='icon' />
+        {/* <ReactSVG src='icons/filter.svg' className='icon' /> */}
+        <FilterFilled className='icon' />
       </span>
     );
 
@@ -767,7 +767,8 @@ const MyTable = ({
       return getCheckbox({ isSelected: rowData.isSelected, onCheckboxClick: () => selectCheckbox(rowIndex) });
     }
     if (dataKey === '') {
-      return <ReactSVG className='expand-icon' src='icons/chevron-down.svg' onClick={() => expandedRow(rowData)} />;
+      // return <ReactSVG className='expand-icon' src='icons/chevron-down.svg' onClick={() => expandedRow(rowData)} />;
+      return <DownOutlined className='expand-icon' onClick={() => expandedRow(rowData)} />;
     }
     if (cellData == null) {
       return '';
@@ -817,6 +818,7 @@ const MyTable = ({
 
   return (
     <Fragment>
+      {/* <AutoSizer> */}
       {sortedList && (
         <DragColumn {...dragProps}>
           <Table
@@ -859,28 +861,27 @@ const MyTable = ({
           </Table>
         </DragColumn>
       )}
-      {/* <Space direction='vertical'>
-        <Space>
-          <Transfer
-            dataSource={metadata.columnsDisplay}
-            titles={['Available', 'Displayed']}
-            operations={['Add', 'Remove']}
-            targetKeys={targetKeys}
-            selectedKeys={selectedKeys}
-            onChange={onChangeTransfer}
-            onSelectChange={onSelectTansferChange}
-            render={(header) => header.label}
-            rowKey={(header) => header.key}
-          />
-          <Button type='primary' onClick={handleAddRemoveColumn}>
-            Apply
-          </Button>
-        </Space>
-      </Space> */}
+      {/* <Col>
+        <Transfer
+          dataSource={metadata.columnsDisplay}
+          titles={['Available', 'Displayed']}
+          operations={['Add', 'Remove']}
+          targetKeys={targetKeys}
+          selectedKeys={selectedKeys}
+          onChange={onChangeTransfer}
+          onSelectChange={onSelectTansferChange}
+          render={(header) => header.label}
+          rowKey={(header) => header.key}
+        />
+        <Button type='primary' onClick={handleAddRemoveColumn}>
+          Apply
+        </Button>
+      </Col> */}
+      {/* </AutoSizer> */}
     </Fragment>
   );
 };
 
-MyTable.propTypes = {};
+NesTable.propTypes = {};
 
-export default MyTable;
+export default NesTable;

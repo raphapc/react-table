@@ -1,6 +1,6 @@
 import faker from 'faker';
 import React from 'react';
-import MyTable from './components/my-table/MyTable';
+import NesTable from './components/my-table/NesTable';
 
 function App() {
   const fetchDatasource = () =>
@@ -110,9 +110,9 @@ function App() {
   };
 
   return (
-    <MyTable
+    <NesTable
       dataSource={dados}
-      width={800}
+      width={1000}
       height={600}
       columnsToDisplay={columns}
       filterSort={filters}
@@ -120,7 +120,7 @@ function App() {
       // tableClassName='testTable'
       // cellClassName='testCell'
       // headerClassName='testHeader'
-      // secondGlanceRender={secondGlaceRender}
+      secondGlanceRender={secondGlaceRender}
       lineSelectable={true}
       onRowSelected={selectedRow}
       // small
