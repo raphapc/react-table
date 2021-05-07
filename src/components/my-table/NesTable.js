@@ -1,5 +1,5 @@
-import { CaretDownOutlined, CaretUpOutlined, DownOutlined, FilterFilled } from '@ant-design/icons';
-import { Button, Checkbox, Col, DatePicker, Dropdown, Input, Menu } from 'antd';
+import { CaretDownOutlined, CaretUpOutlined, DownOutlined, FilterFilled, UpOutlined, RightOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Col, DatePicker, Dropdown, Input, Menu, Transfer } from 'antd';
 import arrayMove from 'array-move';
 import classNames from 'classnames';
 import _ from 'lodash';
@@ -7,7 +7,7 @@ import moment from 'moment';
 import React, { cloneElement, Fragment, useEffect, useState } from 'react';
 import ReactDragListView from 'react-drag-listview';
 import Draggable from 'react-draggable';
-import { Column, defaultTableRowRenderer, Table } from 'react-virtualized';
+import { AutoSizer, Column, defaultTableRowRenderer, Table } from 'react-virtualized';
 import './NesTable.css';
 const { DragColumn } = ReactDragListView;
 const { SubMenu } = Menu;
@@ -34,6 +34,8 @@ const getDatasource = (lineSelectable, dataSource) => {
 const addSelectableColumnToRows = (rows) => {
   return rows.map((row) => {
     row.isSelected = false;
+    row.isExpanded = false;
+    row.mainRow = true;
     return row;
   });
 };
@@ -73,8 +75,10 @@ const NesTable = ({
   height,
   filterSort,
   columnsToDisplay,
+  sorteableHeader = false,
   metadata,
   secondGlanceRender,
+  secondGlanceHeight = 50,
   lineSelectable = false,
   onRowSelected = () => {},
   tableClassName = 'table',
@@ -84,8 +88,9 @@ const NesTable = ({
   small = false,
   hasDropdown = true,
 }) => {
-  const inputRef = React.useRef(null);
-  const inputRef2 = React.useRef(null);
+  const filterInputRef = React.useRef(null);
+  const filterOptionalInputRef = React.useRef(null);
+  const tableRef = React.useRef();
   const processedDatasource = getDatasource(lineSelectable, dataSource);
   const initialFilters = filterSort;
   const rowHeight = small ? smallRowHeight : defaultRowHeight;
@@ -106,12 +111,23 @@ const NesTable = ({
   });
 
   useEffect(() => {
+    forceUpdateTable();
+  }, [expandedRows, sortedList]);
+
+  useEffect(() => {
     if (hasSelectedListChanged.current) {
       const selectedRows = sortedList.filter((row) => row.isSelected);
       onRowSelected(selectedRows);
       hasSelectedListChanged.current = false;
     }
   }, [sortedList, onRowSelected]);
+
+  const forceUpdateTable = () => {
+    // Clear cached size
+    tableRef && tableRef.current && tableRef.current.recomputeRowHeights();
+    // Rerender list with new size
+    tableRef && tableRef.current && tableRef.current.forceUpdateGrid();
+  };
 
   const _sort = (sortBy, sortDirection) => {
     setSortedList(_sortList(sortBy, sortDirection));
@@ -179,8 +195,8 @@ const NesTable = ({
       filterBy = filterDates[0];
       filterUntil = filterDates[1] || '';
     } else {
-      filterBy = inputRef.current.state.value;
-      filterUntil = inputRef2?.current?.state?.value || '';
+      filterBy = filterInputRef.current.state.value;
+      filterUntil = filterOptionalInputRef?.current?.state?.value || '';
     }
 
     switch (columnType?.type) {
@@ -368,10 +384,13 @@ const NesTable = ({
               </Fragment>
             );
           }
-          if (column.props.id === '') {
+          if (column.props.id === 'expand') {
+            const classname = classNames('expand-header', { 'line-height-small': small });
             return (
               <Fragment key={column.key}>
-                <CustomHeader index={index}></CustomHeader>
+                <CustomHeader className={classname} index={index}>
+                  {column}
+                </CustomHeader>
               </Fragment>
             );
           }
@@ -381,7 +400,7 @@ const NesTable = ({
           return (
             <Fragment key={column.key}>
               <CustomHeader
-                className={classNames('drag-header', headerClass)}
+                className={classNames({ 'drag-header': sorteableHeader, 'simple-header': !sorteableHeader }, headerClass)}
                 index={index}
                 onClick={() => sortColumn(column.props.id)}
                 sortFilter={sorted}
@@ -452,7 +471,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.equals })}
+          {getMenuItem({ inputRef: filterInputRef, columnType, idColumn, operation: numberFilters.equals })}
         </SubMenu>
       );
       filterOptions.push(
@@ -462,7 +481,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.lessThan })}
+          {getMenuItem({ inputRef: filterInputRef, columnType, idColumn, operation: numberFilters.lessThan })}
         </SubMenu>
       );
       filterOptions.push(
@@ -472,7 +491,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItem({ inputRef, columnType, idColumn, operation: numberFilters.greaterThan })}
+          {getMenuItem({ inputRef: filterInputRef, columnType, idColumn, operation: numberFilters.greaterThan })}
         </SubMenu>
       );
       filterOptions.push(
@@ -482,7 +501,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItem({ inputRef, inputRef2, columnType, idColumn, operation: numberFilters.between })}
+          {getMenuItem({ inputRef: filterInputRef, inputRef2: filterOptionalInputRef, columnType, idColumn, operation: numberFilters.between })}
         </SubMenu>
       );
     } else if (columnType?.type === 'date') {
@@ -494,7 +513,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.equals })}
+          {getMenuItemDate({ inputRef: filterInputRef, columnType, idColumn, operation: dateFilters.equals })}
         </SubMenu>
       );
       filterOptions.push(
@@ -504,7 +523,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.before })}
+          {getMenuItemDate({ inputRef: filterInputRef, columnType, idColumn, operation: dateFilters.before })}
         </SubMenu>
       );
       filterOptions.push(
@@ -514,7 +533,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItemDate({ inputRef, columnType, idColumn, operation: dateFilters.after })}
+          {getMenuItemDate({ inputRef: filterInputRef, columnType, idColumn, operation: dateFilters.after })}
         </SubMenu>
       );
       filterOptions.push(
@@ -524,7 +543,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItemDate({ inputRef, inputRef2, columnType, idColumn, operation: dateFilters.interval })}
+          {getMenuItemDate({ inputRef: filterInputRef, inputRef2: filterOptionalInputRef, columnType, idColumn, operation: dateFilters.interval })}
         </SubMenu>
       );
     } else {
@@ -536,7 +555,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.contains })}
+          {getMenuItem({ inputRef: filterInputRef, columnType, idColumn, operation: stringFilters.contains })}
         </SubMenu>
       );
       filterOptions.push(
@@ -547,7 +566,7 @@ const NesTable = ({
             e.domEvent.stopPropagation();
           }}
         >
-          {getMenuItem({ inputRef, columnType, idColumn, operation: stringFilters.notContains })}
+          {getMenuItem({ inputRef: filterInputRef, columnType, idColumn, operation: stringFilters.notContains })}
         </SubMenu>
       );
     }
@@ -730,13 +749,18 @@ const NesTable = ({
 
   const renderRow = (props, expandedRows) => {
     const { className, columns, index, key, onColumnClick, onRowClick, rowData, style } = props;
-    if (expandedRows.has(rowData)) {
-      console.log('expanded ---');
+    if (rowData.isExpanded) {
+      console.log('expanded ---', props);
+      let newProps = props;
+      let paddingLeft = lineSelectable ? 80 : 40;
+      newProps.style = { position: 'relative', height: rowHeight };
       return (
         <Fragment key={key}>
-          <div className='expand-column' style={style}>
-            {getSecondGlaceRender('hallo')}
-            {defaultTableRowRenderer(props)}
+          <div className='' style={style}>
+            {defaultTableRowRenderer(newProps)}
+            <div className='expand-column' style={{ height: secondGlanceHeight, paddingLeft: paddingLeft }}>
+              {getSecondGlaceRender(rowData)}
+            </div>
           </div>
         </Fragment>
       );
@@ -753,9 +777,9 @@ const NesTable = ({
     );
   };
 
-  const getSecondGlaceRender = (text) => {
+  const getSecondGlaceRender = (rowData) => {
     console.log('getSecondGlaceRender');
-    return secondGlanceRender(text);
+    return secondGlanceRender(rowData);
   };
 
   const renderCell = ({ cellData, columnData, columnIndex, dataKey, isScrolling, rowData, rowIndex }) => {
@@ -766,9 +790,14 @@ const NesTable = ({
     if (dataKey === 'isSelected') {
       return getCheckbox({ isSelected: rowData.isSelected, onCheckboxClick: () => selectCheckbox(rowIndex) });
     }
-    if (dataKey === '') {
+    if (dataKey === 'expand') {
       // return <ReactSVG className='expand-icon' src='icons/chevron-down.svg' onClick={() => expandedRow(rowData)} />;
-      return <DownOutlined className='expand-icon' onClick={() => expandedRow(rowData)} />;
+      const expandIcon = rowData.isExpanded ? (
+        <UpOutlined className='expand-icon' onClick={() => expandedRow(rowData, rowIndex)} />
+      ) : (
+        <RightOutlined className='expand-icon' onClick={() => expandedRow(rowData, rowIndex)} />
+      );
+      return expandIcon;
     }
     if (cellData == null) {
       return '';
@@ -781,8 +810,7 @@ const NesTable = ({
     }
   };
 
-  const expandedRow = (rowData) => {
-    console.log('expandedRow func', rowData);
+  const expandedRow = (rowData, rowIndex) => {
     setExpandedRows((prevRows) => {
       let newRows = _.cloneDeep(prevRows);
       if (newRows.has(rowData)) {
@@ -793,6 +821,19 @@ const NesTable = ({
       console.log('newRows', newRows);
       return newRows;
     });
+    setSortedList((prevSortedList) => {
+      const newSortedList = _.cloneDeep(prevSortedList);
+      return newSortedList.map((row, index) => {
+        if (index === rowIndex) {
+          row.isExpanded = !row.isExpanded;
+        }
+        return row;
+      });
+    });
+  };
+
+  const getRowHeight = (row) => {
+    return row.isExpanded ? rowHeight + secondGlanceHeight : rowHeight;
   };
 
   const updatedRows = new Map();
@@ -818,49 +859,60 @@ const NesTable = ({
 
   return (
     <Fragment>
-      {/* <AutoSizer> */}
-      {sortedList && (
-        <DragColumn {...dragProps}>
-          <Table
-            width={width}
-            height={height}
-            headerHeight={rowHeight}
-            rowHeight={rowHeight}
-            rowCount={sortedList.length}
-            rowGetter={({ index }) => sortedList[index]}
-            overscanRowCount={10}
-            headerRowRenderer={renderHeaderRow}
-            className={tableClassName}
-            rowClassName={rowClassName}
-            rowRenderer={(renderParams) => renderRow(renderParams, expandedRows)}
-          >
-            {lineSelectable && (
-              <Column
-                id={'checkbox'}
-                key={'checkbox'}
-                dataKey={'isSelected'}
-                className={'checkbox'}
-                label={getCheckbox({ isSelected: isHeaderCheckboxSelected, onCheckboxClick: selectAllRows })}
-                width={40}
-                cellRenderer={renderCell}
-              />
-            )}
-            {secondGlanceRender && <Column id={'expand'} key={'expand'} dataKey={''} label='' width={40} cellRenderer={renderCell} />}
-            {headers &&
-              headers.map((header) => (
-                <Column
-                  id={header.key}
-                  key={header.key}
-                  dataKey={header.key}
-                  label={header.label}
-                  width={header.width}
-                  className={cellClassName}
-                  cellRenderer={renderCell}
-                />
-              ))}
-          </Table>
-        </DragColumn>
-      )}
+      <AutoSizer>
+        {({ autoHeight, autoWidth }) => {
+          const tableWidth = width || autoWidth;
+          const tableHeight = height || autoHeight;
+
+          return (
+            sortedList && (
+              <DragColumn {...dragProps}>
+                <Table
+                  ref={tableRef}
+                  width={tableWidth}
+                  height={tableHeight}
+                  headerHeight={rowHeight}
+                  rowHeight={({ index }) => getRowHeight(sortedList[index])}
+                  rowCount={sortedList.length}
+                  rowGetter={({ index }) => sortedList[index]}
+                  overscanRowCount={10}
+                  headerRowRenderer={renderHeaderRow}
+                  className={tableClassName}
+                  rowClassName={rowClassName}
+                  rowRenderer={(renderParams) => renderRow(renderParams, expandedRows)}
+                >
+                  {lineSelectable && (
+                    <Column
+                      id={'checkbox'}
+                      key={'checkbox'}
+                      dataKey={'isSelected'}
+                      className={'checkbox'}
+                      label={getCheckbox({ isSelected: isHeaderCheckboxSelected, onCheckboxClick: selectAllRows })}
+                      width={40}
+                      cellRenderer={renderCell}
+                    />
+                  )}
+                  {secondGlanceRender && (
+                    <Column id={'expand'} key={'expand'} dataKey={'expand'} label='' width={40} className='expand' cellRenderer={renderCell} />
+                  )}
+                  {headers &&
+                    headers.map((header) => (
+                      <Column
+                        id={header.key}
+                        key={header.key}
+                        dataKey={header.key}
+                        label={header.label}
+                        width={header.width}
+                        className={cellClassName}
+                        cellRenderer={renderCell}
+                      />
+                    ))}
+                </Table>
+              </DragColumn>
+            )
+          );
+        }}
+      </AutoSizer>
       {/* <Col>
         <Transfer
           dataSource={metadata.columnsDisplay}
@@ -877,7 +929,6 @@ const NesTable = ({
           Apply
         </Button>
       </Col> */}
-      {/* </AutoSizer> */}
     </Fragment>
   );
 };

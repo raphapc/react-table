@@ -1,6 +1,7 @@
 import faker from 'faker';
 import React from 'react';
 import NesTable from './components/my-table/NesTable';
+import moment from 'moment';
 
 function App() {
   const fetchDatasource = () =>
@@ -9,7 +10,8 @@ function App() {
       name: faker.name.findName(),
       amount: faker.finance.amount(),
       transactionType: faker.finance.transactionType(),
-      date: faker.date.recent(),
+      transactionDescription: faker.finance.transactionDescription(),
+      date: faker.date.past(),
       creditCardNumber: faker.finance.creditCardNumber(),
       account: faker.finance.account(),
     }));
@@ -74,7 +76,7 @@ function App() {
     { key: 'accountName', label: 'Account Name' },
     { key: 'amount', label: 'Amount' },
     { key: 'date', label: 'Date' },
-    // { key: 'transactionType', label: 'Transaction Type' },
+    { key: 'transactionType', label: 'Transaction Type' },
   ];
 
   const fetchMetadata = () => {
@@ -100,9 +102,43 @@ function App() {
   const columns = fetchColumns();
   const meta = fetchMetadata();
 
-  const secondGlaceRender = (text) => {
-    console.log('secondGlaceRender pai', text);
-    return <div>Hello</div>;
+  const secondGlaceRender = (rowData) => {
+    // console.log('secondGlaceRender pai', text);
+    // return <div style={{ color: 'red' }}>{text}</div>;
+    return (
+      <>
+        <label>
+          <b>Description:</b> {rowData.transactionDescription}
+        </label>
+        <br />
+        <label>
+          <b>Amount: </b>
+          {rowData.amount}
+        </label>
+        <br />
+        <label>
+          <b>Date: </b>
+          {moment(rowData.date).format('DD/MM/YYYY')}
+        </label>
+      </>
+      // <NesTable
+      //   dataSource={dados}
+      //   width={1000}
+      //   height={400}
+      //   columnsToDisplay={columns}
+      //   filterSort={filters}
+      //   metadata={meta}
+      //   // tableClassName='testTable'
+      //   // cellClassName='testCell'
+      //   // headerClassName='testHeader'
+      //   secondGlanceRender={secondGlaceRender}
+      //   secondGlanceHeight={300}
+      //   // lineSelectable={true}
+      //   onRowSelected={selectedRow}
+      //   // small
+      //   // hasDropdown={false}
+      // />
+    );
   };
 
   const selectedRow = (selectedRows) => {
@@ -113,14 +149,16 @@ function App() {
     <NesTable
       dataSource={dados}
       width={1000}
-      height={600}
+      height={650}
       columnsToDisplay={columns}
       filterSort={filters}
+      sorteableHeader={true}
       metadata={meta}
       // tableClassName='testTable'
       // cellClassName='testCell'
       // headerClassName='testHeader'
       secondGlanceRender={secondGlaceRender}
+      secondGlanceHeight={100}
       lineSelectable={true}
       onRowSelected={selectedRow}
       // small
@@ -131,3 +169,20 @@ function App() {
 }
 
 export default App;
+// <NesTable
+//   dataSource={dados}
+//   width={1000}
+//   height={400}
+//   columnsToDisplay={columns}
+//   filterSort={filters}
+//   metadata={meta}
+//   // tableClassName='testTable'
+//   // cellClassName='testCell'
+//   // headerClassName='testHeader'
+//   secondGlanceRender={secondGlaceRender}
+//   secondGlanceHeight={300}
+//   // lineSelectable={true}
+//   onRowSelected={selectedRow}
+//   // small
+//   // hasDropdown={false}
+// />

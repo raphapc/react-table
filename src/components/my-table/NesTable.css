@@ -3,6 +3,21 @@
   font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
+.simple-header {
+  height: auto !important;
+  color: #747474;
+  display: flex;
+  margin: 0 !important;
+  text-transform: none;
+  user-select: none;
+  padding: 15px 10px;
+  position: relative;
+}
+
+.simple-header:hover {
+  background-color: #d9d9d9;
+}
+
 .drag-header {
   height: auto !important;
   color: #747474;
@@ -87,8 +102,23 @@
 .sort-icon {
   justify-content: end;
 }
+
+.line-height-small {
+  height: 40px;
+}
+
+.expand {
+  text-align: center;
+}
+
+.expand-header {
+  height: 50px;
+  border-right: black 1px solid;
+}
+
 .expand-column {
-  width: 40px;
+  position: 'relative';
+  background-color: #f5f5f5;
 }
 
 .expand-icon {
