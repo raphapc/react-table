@@ -106,64 +106,83 @@ function App() {
     // console.log('secondGlaceRender pai', text);
     // return <div style={{ color: 'red' }}>{text}</div>;
     return (
-      <>
-        <label>
-          <b>Description:</b> {rowData.transactionDescription}
-        </label>
-        <br />
-        <label>
-          <b>Amount: </b>
-          {rowData.amount}
-        </label>
-        <br />
-        <label>
-          <b>Date: </b>
-          {moment(rowData.date).format('DD/MM/YYYY')}
-        </label>
-      </>
-      // <NesTable
-      //   dataSource={dados}
-      //   width={1000}
-      //   height={400}
-      //   columnsToDisplay={columns}
-      //   filterSort={filters}
-      //   metadata={meta}
-      //   // tableClassName='testTable'
-      //   // cellClassName='testCell'
-      //   // headerClassName='testHeader'
-      //   secondGlanceRender={secondGlaceRender}
-      //   secondGlanceHeight={300}
-      //   // lineSelectable={true}
-      //   onRowSelected={selectedRow}
-      //   // small
-      //   // hasDropdown={false}
-      // />
+      // <>
+      //   <label>
+      //     <b>Description:</b> {rowData.transactionDescription}
+      //   </label>
+      //   <br />
+      //   <label>
+      //     <b>Amount: </b>
+      //     {rowData.amount}
+      //   </label>
+      //   <br />
+      //   <label>
+      //     <b>Date: </b>
+      //     {moment(rowData.date).format('DD/MM/YYYY')}
+      //   </label>
+      // </>
+      <NesTable
+        dataSource={dados}
+        width={1200}
+        height={400}
+        columnsToDisplay={columns}
+        filterSort={filters}
+        sorteableHeader={true}
+        metadata={meta}
+        secondGlanceRender={thridGlance}
+        secondGlanceHeight={80}
+        // lineSelectable={true}
+        // onRowSelected={selectedRow}
+        small
+        // hasDropdown={false}
+      />
     );
   };
+
+  const thridGlance = (rowData) => (
+    <>
+      <label>
+        <b>Description:</b> {rowData.transactionDescription}
+      </label>
+      <br />
+      <label>
+        <b>Amount: </b>
+        {rowData.amount}
+      </label>
+      <br />
+      <label>
+        <b>Date: </b>
+        {moment(rowData.date).format('DD/MM/YYYY')}
+      </label>
+    </>
+  );
 
   const selectedRow = (selectedRows) => {
     console.log('selectedRows', selectedRows);
   };
 
   return (
-    <NesTable
-      dataSource={dados}
-      width={1000}
-      height={650}
-      columnsToDisplay={columns}
-      filterSort={filters}
-      sorteableHeader={true}
-      metadata={meta}
-      // tableClassName='testTable'
-      // cellClassName='testCell'
-      // headerClassName='testHeader'
-      secondGlanceRender={secondGlaceRender}
-      secondGlanceHeight={100}
-      lineSelectable={true}
-      onRowSelected={selectedRow}
-      // small
-      // hasDropdown={false}
-    />
+    <div className='app'>
+      <span>TESTE</span>
+      <NesTable
+        dataSource={dados}
+        width={1200}
+        // height={650}
+        columnsToDisplay={columns}
+        filterSort={filters}
+        sorteableHeader={true}
+        metadata={meta}
+        // tableClassName='testTable'
+        // cellClassName='testCell'
+        // headerClassName='testHeader'
+        secondGlanceRender={secondGlaceRender}
+        secondGlanceHeight={400}
+        lineSelectable={true}
+        onRowSelected={selectedRow}
+        small
+        hasDropdown={true}
+      />
+    </div>
   );
   // filterSort={filters}
 }

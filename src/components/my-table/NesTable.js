@@ -1,5 +1,5 @@
-import { CaretDownOutlined, CaretUpOutlined, DownOutlined, FilterFilled, UpOutlined, RightOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Col, DatePicker, Dropdown, Input, Menu, Transfer } from 'antd';
+import { CaretDownOutlined, CaretUpOutlined, DownOutlined, FilterFilled, RightOutlined, UpOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Col, DatePicker, Dropdown, Input, Menu } from 'antd';
 import arrayMove from 'array-move';
 import classNames from 'classnames';
 import _ from 'lodash';
@@ -17,7 +17,9 @@ const getHeadersFrom = (headersList, totalWidth, isSelectable) => {
   if (isSelectable) {
     adjustedWidth -= 40;
   }
-  const defaultWidth = adjustedWidth / headersList.length;
+  const headerSize = adjustedWidth / headersList.length;
+  const defaultWidth = headerSize <= minHeaderSize ? minHeaderSize : headerSize;
+  console.log('defaultWidth', defaultWidth);
   return headersList.map((header) => {
     header.width = defaultWidth;
     return header;
@@ -49,6 +51,8 @@ const getColumnType = (metadata, columnId) => {
 
 const defaultRowHeight = 50;
 const smallRowHeight = 40;
+const minHeaderSize = 150;
+const minColWidth = 175;
 
 const numberFilters = {
   equals: 'equals',
@@ -81,7 +85,7 @@ const NesTable = ({
   secondGlanceHeight = 50,
   lineSelectable = false,
   onRowSelected = () => {},
-  tableClassName = 'table',
+  tableClassName = 'nes-table',
   headerClassName = '',
   rowClassName = 'row',
   cellClassName = 'cell',
@@ -95,20 +99,29 @@ const NesTable = ({
   const initialFilters = filterSort;
   const rowHeight = small ? smallRowHeight : defaultRowHeight;
   const hasSelectedListChanged = React.useRef(false);
+  const headerId = _.uniqueId('header-');
   let filterDates = [];
 
   //State variables
   const [expandedRows, setExpandedRows] = useState(() => new Set());
   const [isHeaderCheckboxSelected, setIsHeaderCheckboxSelected] = useState(false);
-  const [headers, setHeaders] = useState(() => getHeadersFrom(columnsToDisplay, width, lineSelectable));
+  const [headers, setHeaders] = useState();
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [sortedList, setSortedList] = useState(processedDatasource);
   const [sortFilter, setSortFilter] = useState(filterSort);
   const [targetKeys, setTargetKeys] = useState(() => getInitialKeys(columnsToDisplay));
+  const [tableWidth, setTableWidth] = useState(0);
+  const [tableHeight, setTableHeight] = useState(0);
 
   useEffect(() => {
     console.log('reeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeender');
   });
+
+  useEffect(() => {
+    console.log('changed tableWidth', tableWidth);
+    setHeaders(getHeadersFrom(columnsToDisplay, tableWidth, lineSelectable));
+    forceUpdateTable();
+  }, [tableWidth]);
 
   useEffect(() => {
     forceUpdateTable();
@@ -397,10 +410,11 @@ const NesTable = ({
 
           const sorted = sortFilter.find((filter) => filter.key === column.props.id && (filter.isSorted || filter.filterValue));
           const headerClass = headerClassName;
+
           return (
             <Fragment key={column.key}>
               <CustomHeader
-                className={classNames({ 'drag-header': sorteableHeader, 'simple-header': !sorteableHeader }, headerClass)}
+                className={classNames({ 'drag-header': sorteableHeader, 'simple-header': !sorteableHeader }, headerId, headerClass)}
                 index={index}
                 onClick={() => sortColumn(column.props.id)}
                 sortFilter={sorted}
@@ -694,8 +708,13 @@ const NesTable = ({
   };
 
   const onDragEnd = (fromIndex, toIndex) => {
+    //need to remove one position because of the checkbox
     if (lineSelectable) {
-      //need to remove one position because of the checkbox
+      fromIndex--;
+      toIndex--;
+    }
+    //need to remove one position because of the secondGlance icon
+    if (secondGlanceRender) {
       fromIndex--;
       toIndex--;
     }
@@ -750,15 +769,16 @@ const NesTable = ({
   const renderRow = (props, expandedRows) => {
     const { className, columns, index, key, onColumnClick, onRowClick, rowData, style } = props;
     if (rowData.isExpanded) {
-      console.log('expanded ---', props);
       let newProps = props;
       let paddingLeft = lineSelectable ? 80 : 40;
+      const bgExpanded = `linear-gradient(90deg, #f5f5f5 0%, #f5f5f5 ${paddingLeft}px, #fff ${paddingLeft}px, #fff 100%)`;
       newProps.style = { position: 'relative', height: rowHeight };
+      console.log('bgExpanded', bgExpanded);
       return (
         <Fragment key={key}>
           <div className='' style={style}>
             {defaultTableRowRenderer(newProps)}
-            <div className='expand-column' style={{ height: secondGlanceHeight, paddingLeft: paddingLeft }}>
+            <div className='expand-column' style={{ height: secondGlanceHeight, paddingLeft: paddingLeft, background: bgExpanded }}>
               {getSecondGlaceRender(rowData)}
             </div>
           </div>
@@ -778,7 +798,6 @@ const NesTable = ({
   };
 
   const getSecondGlaceRender = (rowData) => {
-    console.log('getSecondGlaceRender');
     return secondGlanceRender(rowData);
   };
 
@@ -818,7 +837,6 @@ const NesTable = ({
       } else {
         newRows.add(rowData);
       }
-      console.log('newRows', newRows);
       return newRows;
     });
     setSortedList((prevSortedList) => {
@@ -849,71 +867,89 @@ const NesTable = ({
       };
     });
   }
-
   const dragProps = {
     onDragEnd,
-    nodeSelector: '.drag-header',
+    // nodeSelector: '.drag-header',
+    nodeSelector: `.${headerId}`,
     lineClassName: 'line',
     ignoreSelector: '.DragHandle',
   };
 
   return (
-    <Fragment>
-      <AutoSizer>
-        {({ autoHeight, autoWidth }) => {
-          const tableWidth = width || autoWidth;
-          const tableHeight = height || autoHeight;
-
-          return (
-            sortedList && (
-              <DragColumn {...dragProps}>
-                <Table
-                  ref={tableRef}
-                  width={tableWidth}
-                  height={tableHeight}
-                  headerHeight={rowHeight}
-                  rowHeight={({ index }) => getRowHeight(sortedList[index])}
-                  rowCount={sortedList.length}
-                  rowGetter={({ index }) => sortedList[index]}
-                  overscanRowCount={10}
-                  headerRowRenderer={renderHeaderRow}
-                  className={tableClassName}
-                  rowClassName={rowClassName}
-                  rowRenderer={(renderParams) => renderRow(renderParams, expandedRows)}
-                >
-                  {lineSelectable && (
+    <AutoSizer>
+      {({ height: autoHeight, width: autoWidth }) => {
+        const minTableWidth = minColWidth * headers?.length + 100;
+        let newWidth = autoWidth <= minTableWidth ? minTableWidth : autoWidth;
+        if (width) {
+          newWidth = width <= minTableWidth ? minTableWidth : width;
+        }
+        setTableWidth(newWidth);
+        setTableHeight(height || autoHeight);
+        console.log('newWidth', newWidth, width);
+        return (
+          sortedList && (
+            <DragColumn {...dragProps}>
+              <Table
+                ref={tableRef}
+                width={tableWidth}
+                height={tableHeight}
+                headerHeight={rowHeight}
+                rowHeight={({ index }) => getRowHeight(sortedList[index])}
+                rowCount={sortedList.length}
+                rowGetter={({ index }) => sortedList[index]}
+                overscanRowCount={10}
+                headerRowRenderer={renderHeaderRow}
+                className={tableClassName}
+                rowClassName={rowClassName}
+                rowRenderer={(renderParams) => renderRow(renderParams, expandedRows)}
+              >
+                {lineSelectable && (
+                  <Column
+                    id={'checkbox'}
+                    key={'checkbox'}
+                    dataKey={'isSelected'}
+                    className={'checkbox'}
+                    label={getCheckbox({ isSelected: isHeaderCheckboxSelected, onCheckboxClick: selectAllRows })}
+                    width={40}
+                    minWidth={40}
+                    cellRenderer={renderCell}
+                  />
+                )}
+                {secondGlanceRender && (
+                  <Column
+                    id={'expand'}
+                    key={'expand'}
+                    dataKey={'expand'}
+                    label=''
+                    width={40}
+                    minWidth={40}
+                    className='expand'
+                    cellRenderer={renderCell}
+                  />
+                )}
+                {headers &&
+                  headers.map((header) => (
                     <Column
-                      id={'checkbox'}
-                      key={'checkbox'}
-                      dataKey={'isSelected'}
-                      className={'checkbox'}
-                      label={getCheckbox({ isSelected: isHeaderCheckboxSelected, onCheckboxClick: selectAllRows })}
-                      width={40}
+                      id={header.key}
+                      key={header.key}
+                      dataKey={header.key}
+                      label={header.label}
+                      width={header.width}
+                      minWidth={minColWidth}
+                      maxWidth={minColWidth * 2}
+                      className={cellClassName}
                       cellRenderer={renderCell}
                     />
-                  )}
-                  {secondGlanceRender && (
-                    <Column id={'expand'} key={'expand'} dataKey={'expand'} label='' width={40} className='expand' cellRenderer={renderCell} />
-                  )}
-                  {headers &&
-                    headers.map((header) => (
-                      <Column
-                        id={header.key}
-                        key={header.key}
-                        dataKey={header.key}
-                        label={header.label}
-                        width={header.width}
-                        className={cellClassName}
-                        cellRenderer={renderCell}
-                      />
-                    ))}
-                </Table>
-              </DragColumn>
-            )
-          );
-        }}
-      </AutoSizer>
-      {/* <Col>
+                  ))}
+              </Table>
+            </DragColumn>
+          )
+        );
+      }}
+    </AutoSizer>
+  );
+
+  /* <Col>
         <Transfer
           dataSource={metadata.columnsDisplay}
           titles={['Available', 'Displayed']}
@@ -928,9 +964,7 @@ const NesTable = ({
         <Button type='primary' onClick={handleAddRemoveColumn}>
           Apply
         </Button>
-      </Col> */}
-    </Fragment>
-  );
+      </Col> */
 };
 
 NesTable.propTypes = {};

@@ -3,9 +3,17 @@
 }
 
 .testCell {
-  border: 1px solid blue;
+  border: 1px solid rgb(163, 11, 11);
+  background-color: rgb(13, 126, 9);
 }
 
 .testHeader {
-  border: 1px solid blue;
+  border: 1px solid blueviolet;
+  background-color: coral;
+}
+
+.app {
+  /* background-color: red; */
+  height: 90vh;
+  display: block;
 }
