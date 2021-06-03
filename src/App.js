@@ -103,8 +103,6 @@ function App() {
   const meta = fetchMetadata();
 
   const secondGlaceRender = (rowData) => {
-    // console.log('secondGlaceRender pai', text);
-    // return <div style={{ color: 'red' }}>{text}</div>;
     return (
       // <>
       //   <label>
@@ -123,13 +121,13 @@ function App() {
       // </>
       <NesTable
         dataSource={dados}
-        width={1200}
-        height={400}
+        // width={1200}
+        // height={400}
         columnsToDisplay={columns}
         filterSort={filters}
         sorteableHeader={true}
         metadata={meta}
-        secondGlanceRender={thridGlance}
+        secondGlanceRenderer={thridGlance}
         secondGlanceHeight={80}
         // lineSelectable={true}
         // onRowSelected={selectedRow}
@@ -163,7 +161,6 @@ function App() {
 
   return (
     <div className='app'>
-      <span>TESTE</span>
       <NesTable
         dataSource={dados}
         width={1200}
@@ -175,7 +172,7 @@ function App() {
         // tableClassName='testTable'
         // cellClassName='testCell'
         // headerClassName='testHeader'
-        secondGlanceRender={secondGlaceRender}
+        secondGlanceRenderer={secondGlaceRender}
         secondGlanceHeight={400}
         lineSelectable={true}
         onRowSelected={selectedRow}
@@ -184,24 +181,6 @@ function App() {
       />
     </div>
   );
-  // filterSort={filters}
 }
 
 export default App;
-// <NesTable
-//   dataSource={dados}
-//   width={1000}
-//   height={400}
-//   columnsToDisplay={columns}
-//   filterSort={filters}
-//   metadata={meta}
-//   // tableClassName='testTable'
-//   // cellClassName='testCell'
-//   // headerClassName='testHeader'
-//   secondGlanceRender={secondGlaceRender}
-//   secondGlanceHeight={300}
-//   // lineSelectable={true}
-//   onRowSelected={selectedRow}
-//   // small
-//   // hasDropdown={false}
-// />

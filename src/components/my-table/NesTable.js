@@ -19,7 +19,6 @@ const getHeadersFrom = (headersList, totalWidth, isSelectable) => {
   }
   const headerSize = adjustedWidth / headersList.length;
   const defaultWidth = headerSize <= minHeaderSize ? minHeaderSize : headerSize;
-  console.log('defaultWidth', defaultWidth);
   return headersList.map((header) => {
     header.width = defaultWidth;
     return header;
@@ -35,7 +34,7 @@ const getDatasource = (lineSelectable, dataSource) => {
 
 const addSelectableColumnToRows = (rows) => {
   return rows.map((row) => {
-    row.isSelected = false;
+    row.isSelected = row.isSelected || false;
     row.isExpanded = false;
     row.mainRow = true;
     return row;
@@ -81,7 +80,7 @@ const NesTable = ({
   columnsToDisplay,
   sorteableHeader = false,
   metadata,
-  secondGlanceRender,
+  secondGlanceRenderer,
   secondGlanceHeight = 50,
   lineSelectable = false,
   onRowSelected = () => {},
@@ -118,7 +117,6 @@ const NesTable = ({
   });
 
   useEffect(() => {
-    console.log('changed tableWidth', tableWidth);
     setHeaders(getHeadersFrom(columnsToDisplay, tableWidth, lineSelectable));
     forceUpdateTable();
   }, [tableWidth]);
@@ -390,8 +388,8 @@ const NesTable = ({
         {React.Children.map(columns, (column, index) => {
           if (column.props.id === 'checkbox') {
             return (
-              <Fragment key={column.key}>
-                <CustomHeader className='checkbox' index={index}>
+              <Fragment>
+                <CustomHeader className='checkbox' index={index} key={column.key}>
                   {column}
                 </CustomHeader>
               </Fragment>
@@ -400,8 +398,8 @@ const NesTable = ({
           if (column.props.id === 'expand') {
             const classname = classNames('expand-header', { 'line-height-small': small });
             return (
-              <Fragment key={column.key}>
-                <CustomHeader className={classname} index={index}>
+              <Fragment>
+                <CustomHeader className={classname} index={index} key={column.key}>
                   {column}
                 </CustomHeader>
               </Fragment>
@@ -412,13 +410,14 @@ const NesTable = ({
           const headerClass = headerClassName;
 
           return (
-            <Fragment key={column.key}>
+            <Fragment>
               <CustomHeader
                 className={classNames({ 'drag-header': sorteableHeader, 'simple-header': !sorteableHeader }, headerId, headerClass)}
                 index={index}
                 onClick={() => sortColumn(column.props.id)}
                 sortFilter={sorted}
                 idColumn={column.props.id}
+                key={column.key}
               >
                 {column}
               </CustomHeader>
@@ -491,6 +490,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='Less than'
+          key={idColumn + '-less'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -501,6 +501,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='Greater than'
+          key={idColumn + '-greater'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -511,6 +512,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='Between'
+          key={idColumn + '-between'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -522,7 +524,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='Equals'
-          key={idColumn + '-equals'}
+          key={idColumn + '-date-equals'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -533,6 +535,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='Before'
+          key={idColumn + '-date-before'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -543,6 +546,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='After'
+          key={idColumn + '-date-after'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -553,6 +557,7 @@ const NesTable = ({
       filterOptions.push(
         <SubMenu
           title='Date interval'
+          key={idColumn + '-date-interval'}
           onTitleClick={(e) => {
             e.domEvent.stopPropagation();
           }}
@@ -714,7 +719,7 @@ const NesTable = ({
       toIndex--;
     }
     //need to remove one position because of the secondGlance icon
-    if (secondGlanceRender) {
+    if (secondGlanceRenderer) {
       fromIndex--;
       toIndex--;
     }
@@ -773,7 +778,6 @@ const NesTable = ({
       let paddingLeft = lineSelectable ? 80 : 40;
       const bgExpanded = `linear-gradient(90deg, #f5f5f5 0%, #f5f5f5 ${paddingLeft}px, #fff ${paddingLeft}px, #fff 100%)`;
       newProps.style = { position: 'relative', height: rowHeight };
-      console.log('bgExpanded', bgExpanded);
       return (
         <Fragment key={key}>
           <div className='' style={style}>
@@ -798,7 +802,7 @@ const NesTable = ({
   };
 
   const getSecondGlaceRender = (rowData) => {
-    return secondGlanceRender(rowData);
+    return secondGlanceRenderer(rowData);
   };
 
   const renderCell = ({ cellData, columnData, columnIndex, dataKey, isScrolling, rowData, rowIndex }) => {
@@ -854,7 +858,6 @@ const NesTable = ({
     return row.isExpanded ? rowHeight + secondGlanceHeight : rowHeight;
   };
 
-  const updatedRows = new Map();
   if (sortedList) {
     sortedList.forEach((row, index) => {
       const rowKey = row.key;
@@ -869,7 +872,6 @@ const NesTable = ({
   }
   const dragProps = {
     onDragEnd,
-    // nodeSelector: '.drag-header',
     nodeSelector: `.${headerId}`,
     lineClassName: 'line',
     ignoreSelector: '.DragHandle',
@@ -885,7 +887,6 @@ const NesTable = ({
         }
         setTableWidth(newWidth);
         setTableHeight(height || autoHeight);
-        console.log('newWidth', newWidth, width);
         return (
           sortedList && (
             <DragColumn {...dragProps}>
@@ -915,7 +916,7 @@ const NesTable = ({
                     cellRenderer={renderCell}
                   />
                 )}
-                {secondGlanceRender && (
+                {secondGlanceRenderer && (
                   <Column
                     id={'expand'}
                     key={'expand'}
