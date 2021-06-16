@@ -160,14 +160,14 @@ function App() {
   };
 
   return (
-    <div className='app'>
+    <div className="app">
       <NesTable
         dataSource={dados}
-        width={1200}
+        // width={1200}
         // height={650}
         columnsToDisplay={columns}
         filterSort={filters}
-        sorteableHeader={true}
+        sorteableHeader={false}
         metadata={meta}
         // tableClassName='testTable'
         // cellClassName='testCell'
@@ -175,9 +175,9 @@ function App() {
         secondGlanceRenderer={secondGlaceRender}
         secondGlanceHeight={400}
         lineSelectable={true}
-        onRowSelected={selectedRow}
-        small
-        hasDropdown={true}
+        // onRowSelected={selectedRow}
+        // small
+        // hasDropdown={true}
       />
     </div>
   );

@@ -1,0 +1,270 @@
+// Color variables (appears count calculates by raw css)
+@color0: #d9d9d9; // Appears 6 times
+@color1: #f5f5f5; // Appears 5 times
+@color2: #595959; // Appears 3 times
+@color3: #cae6fe; // Appears 3 times
+@color4: #a5a5a5; // Appears 2 times
+@color5: #aaaaaa; // Appears 2 times
+
+// Width variables (appears count calculates by raw css)
+@width3: 12px; // Appears 2 times
+
+// Height variables (appears count calculates by raw css)
+@height1: 50px; // Appears 2 times
+@height4: 50%; // Appears 2 times
+
+.nes-table {
+	font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+	font-size: 14px;
+	.simple-header {
+		color: @color2;
+		display: flex;
+		height: auto !important;
+		margin: 0 !important;
+		padding: 15px 10px;
+		position: relative;
+		text-transform: none;
+		user-select: none;
+		&:hover {
+			background-color: @color0;
+			.anticon {
+				opacity: 1;
+			}
+		}
+		.anticon {
+			opacity: 0;
+			transition: opacity 0.3s linear;
+		}
+		.ant-dropdown-trigger {
+			height: @height4;
+			position: absolute;
+			right: 14px;
+			top: 20px;
+		}
+	}
+	.drag-header {
+		color: @color2;
+		cursor: -moz-grab;
+		cursor: -webkit-grab;
+		cursor: grab;
+		display: flex;
+		height: auto !important;
+		margin: 0 !important;
+		padding-bottom: 15px;
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-top: 15px;
+		position: relative;
+		text-transform: none;
+		user-select: none;
+		&:hover {
+			background-color: @color0;
+			.anticon {
+				opacity: 1;
+			}
+		}
+		.anticon {
+			opacity: 0;
+			transition: opacity 0.3s linear;
+		}
+		&:active {
+			cursor: -moz-grabbing !important;
+			cursor: -webkit-grabbing !important;
+			cursor: grabbing !important;
+			pointer-events: auto !important;
+		}
+		.ant-dropdown-trigger {
+			height: @height4;
+			position: absolute;
+			right: 14px;
+			top: 20px;
+		}
+	}
+	.header__icon-sort {
+		color: @color4;
+		margin-left: 8px;
+	}
+	.header__icon-filter {
+		margin-left: 14px;
+		width: 14px;
+	}
+	.icon {
+		align-items: center;
+		fill: @color4;
+		width: @width3;
+	}
+	.ReactVirtualized__Table__headerRow {
+		background-color: @color1;
+		background-color: @color1;
+		border-bottom: 1px @color0 solid;
+		color: @color2;
+		display: flex;
+		font-family: Roboto Medium;
+		font-size: 14px;
+		padding-top: 0px;
+		.checkbox {
+			label {
+				margin-top: 1.5em;
+			}
+		}
+	}
+	.ReactVirtualized__Table__headerColumn {
+		margin-right: 0;
+		&:first-of-type {
+			margin-left: 0;
+		}
+	}
+	.ReactVirtualized__Table__rowColumn {
+		color: #333333;
+		margin-right: 3px;
+		padding-left: 10px;
+		&:first-of-type {
+			margin-left: 0;
+		}
+	}
+	.checkbox {
+		padding-left: 0;
+		text-align: center;
+	}
+	.selected {
+		background-color: #eaf5fe;
+		&:hover {
+			background-color: #d5ebfe !important;
+		}
+	}
+	.row {
+		border-bottom: 1px @color0 solid;
+		&:hover {
+			background-color: @color1;
+		}
+	}
+	.sort-icon {
+		justify-content: end;
+	}
+	.line-height-small {
+		height: 40px;
+	}
+	.expand {
+		margin-right: 0;
+		text-align: center;
+	}
+	.expand-header {
+		height: @height1;
+	}
+	.expand-column {
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+	&: {
+		-webkit-scrollbar {
+			height: 8px;
+			padding: 4px;
+			width: 8px;
+		}
+		-webkit-scrollbar-track {
+			background: @color1;
+			height: 16px;
+		}
+		-webkit-scrollbar-thumb {
+			background: @color0;
+			hover {
+				background: #bfbfbf;
+			}
+		}
+	}
+	.expand-icon {
+		width: @width3;
+	}
+	.line {
+		border-color: @color0 !important;
+		&: {
+			after {
+				border-bottom: 5px solid @color5;
+				border-left: 5px solid transparent;
+				border-right: 5px solid transparent;
+				bottom: -5px;
+				content: '';
+				height: 0;
+				left: -6px;
+				position: absolute;
+				width: 0;
+			}
+			before {
+				background: @color5;
+				bottom: -15px;
+				content: '';
+				height: 10px;
+				left: -2px;
+				position: absolute;
+				width: 2px;
+			}
+		}
+	}
+	.DragHandle {
+		background-color: @color1;
+		color: transparent;
+		cursor: col-resize;
+		height: @height1;
+		width: 3px;
+		&:hover {
+			background-color: rgba(0, 0, 0, 0.5);
+		}
+	}
+	.DragHandleActive {
+		z-index: 3;
+		&:hover {
+			z-index: 3;
+		}
+	}
+	.cellClassName {
+		border: 1px solid red;
+	}
+	.date-picker {
+		width: 130px;
+	}
+	.range-picker {
+		width: 250px;
+	}
+	.ant-dropdown-menu {
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+	.ant-dropdown-menu-sub {
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+	.ant-dropdown-menu-submenu-title {
+		&:hover {
+			background-color: @color3 !important;
+		}
+	}
+	.ant-dropdown-menu-item {
+		&:hover {
+			background-color: @color3 !important;
+		}
+	}
+	.ant-dropdown-menu-submenu-active {
+		background-color: @color3 !important;
+	}
+	.sub-menu {
+		margin-left: -30px;
+	}
+	.ant-dropdown-menu-submenu-arrow {
+		right: -5px !important;
+	}
+	.input-wrapper {
+		margin-bottom: 5px;
+	}
+	.input-label {
+		display: inline-block;
+		width: 35px;
+	}
+	.ant-calendar-picker {
+		display: block !important;
+		margin-bottom: 5px !important;
+	}
+	.ReactVirtualized__Table__row {
+		display: flex;
+		padding-top: 1em;
+	}
+}
